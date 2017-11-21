@@ -9,8 +9,8 @@ defmodule Mws.Parser do
   def handle_response({:ok, %{body: body, headers: headers, status_code: _code}}) do
     body =
       case get_content_type(headers) do
-        "text/xml"                        -> parse_xml(body)
-        "text/xml;charset=" <> _charset   -> parse_xml(body)
+        "text/xml"                        -> XmlToMap.naive_map(body)
+        "text/xml;charset=" <> _charset   -> XmlToMap.naive_map(body)
         "text/plain;charset=" <> _charset ->
           body
           |> String.split("\r\n")
@@ -31,15 +31,6 @@ defmodule Mws.Parser do
   def handle_response({:error, err}) do
     Logger.error "HTTP Request resulted in an error"
     {:error, err}
-  end
-
-  defp parse_xml(xml) do
-    with {:ok, xml} <- Mws.XsltTransformer.strip_namespaces(xml) do
-      XmlToMap.naive_map(xml)
-    else
-      {:error, err} ->
-        {:error, err, xml}
-    end
   end
 
   def get_content_type(headers) do
